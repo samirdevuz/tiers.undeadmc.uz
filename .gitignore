@@ -1,0 +1,21 @@
+# Bog'liqliklar
+node_modules/
+
+# Maxfiy sozlamalar (faqat .env.example gitga kiradi)
+.env
+.env.*
+!.env.example
+
+# SQLite baza va zaxira nusxalar
+*.db
+*.db-*
+*.db.gz
+data/*
+!data/.gitkeep
+backups/
+
+# Tizim va muharrir fayllari
+.DS_Store
+Thumbs.db
+*.log
+.claude/

@@ -1,0 +1,13 @@
+{
+  "name": "UNDEAD MC Tierlar",
+  "short_name": "UNDEAD Tier",
+  "lang": "uz",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

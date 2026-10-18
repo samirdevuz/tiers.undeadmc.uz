@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <meta name="robots" content="{{robots}}">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="{{url}}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="UNDEAD MC">
+  <meta property="og:locale" content="uz_UZ">
+  <meta property="og:url" content="{{url}}">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:image" content="{{site}}/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="UndeadMC logotipi">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{title}}">
+  <meta name="twitter:description" content="{{description}}">
+  <meta name="twitter:image" content="{{site}}/assets/og-image.jpg">
+
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <link rel="preload" as="image" href="/assets/logo.webp" imagesrcset="/assets/logo-sm.webp 440w, /assets/logo.webp 1079w" imagesizes="(max-width: 640px) 86vw, 560px" fetchpriority="high">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://mc-heads.net">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&display=swap">
+  <link rel="stylesheet" href="/css/main.css?v={{v}}">
+  <script src="/js/icons.js?v={{v}}" defer></script>
+  <script src="/js/app.js?v={{v}}" defer></script>
+</head>
+<body data-discord="{{discord}}">
+  <a class="skip-link" href="#reyting">Reytingga o'tish</a>
+
+  <div class="bg" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <header class="nav" data-nav>
+    <div class="container nav-inner">
+      <a class="nav-logo" href="/" aria-label="UNDEAD MC Tierlar — bosh sahifa">
+        <img src="/assets/logo-sm.webp" width="440" height="106" alt="">
+      </a>
+
+      <nav id="nav-menu" class="nav-menu" aria-label="Asosiy menyu">
+        <ul>
+          <li><a href="/#reyting" data-nav-link>Reyting</a></li>
+          <li><a href="/#tier-test" data-nav-link>Tier test olish</a></li>
+          <li><a href="{{shop}}" rel="noopener">Do'kon</a></li>
+          <li class="nav-menu-cta">
+            <a class="btn btn-primary" href="{{discord}}" target="_blank" rel="noopener">
+              <span class="icon" data-icon="discord"></span><span>Discord</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="search" id="search-panel" data-search>
+        <form class="search-form" role="search" action="/" data-search-form>
+          <label class="sr-only" for="search-input">O'yinchini nik bo'yicha qidirish</label>
+          <span class="search-icon" data-icon="search"></span>
+          <input id="search-input" class="search-input" type="search" name="q"
+            placeholder="O'yinchini qidirish..." autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="16"
+            role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-results">
+          <ul id="search-results" class="search-results" role="listbox" aria-label="Qidiruv natijalari" hidden></ul>
+        </form>
+      </div>
+
+      <a class="btn btn-primary btn-sm nav-discord" href="{{discord}}" target="_blank" rel="noopener">
+        <span class="icon" data-icon="discord"></span><span>Discord</span>
+      </a>
+
+      <div class="nav-actions">
+        <button class="icon-btn search-toggle" type="button" aria-expanded="false" aria-controls="search-panel" aria-label="Qidirish" data-search-toggle>
+          <span class="icon" data-icon="search"></span>
+        </button>
+        <button class="burger" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Menyu" data-burger>
+          <span class="burger-box" aria-hidden="true"><span></span><span></span><span></span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-label="UNDEAD MC tier reytingi">
+      <div class="container hero-inner">
+        <h1 class="hero-title">
+          <img class="hero-logo" src="/assets/logo.webp" srcset="/assets/logo-sm.webp 440w, /assets/logo.webp 1079w" sizes="(max-width: 640px) 86vw, 560px" width="1079" height="261" alt="UNDEAD MC" fetchpriority="high" decoding="async">
+          <span class="hero-kicker">PvP tier reyting</span>
+        </h1>
+        <p class="hero-sub">O'yinchilar testerlar tomonidan PvP kitlarda sinaladi va har bir kit uchun tier oladi.</p>
+        <ul class="hero-stats" aria-live="polite">
+          <li><strong data-stat="ranked">—</strong> o'yinchi reytingda</li>
+          <li><strong data-stat="kits">—</strong> ta kit</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="board" id="reyting" aria-labelledby="board-title" tabindex="-1">
+      <h2 class="sr-only" id="board-title">Reyting</h2>
+      <div class="tabs-bar">
+        <div class="container">
+          <div class="tabs" role="tablist" aria-label="Reyting turi" data-tabs>
+            <button class="tab" type="button" role="tab" id="tab-umumiy" aria-controls="board-panel" aria-selected="true" data-tab="umumiy">
+              <span class="tab-icon" data-icon="trophy"></span><span>Umumiy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="board-panel" id="board-panel" role="tabpanel" aria-labelledby="tab-umumiy" tabindex="0" data-panel>
+          <p class="state" role="status">Yuklanmoqda...</p>
+          <noscript><p class="state">Reytingni ko'rish uchun brauzeringizda JavaScript yoqing.</p></noscript>
+        </div>
+      </div>
+    </section>
+
+    <section class="howto" id="tier-test" aria-labelledby="howto-title" tabindex="-1">
+      <div class="container">
+        <h2 class="section-title" id="howto-title"><span class="icon" data-icon="sword"></span><span>Tier test olish</span></h2>
+        <p class="section-lead">Tieringizni bilmoqchimisiz? Testerlarimiz sizni tanlagan kitingizda sinab ko'radi va natijani shu saytga qo'yadi.</p>
+
+        <ol class="steps">
+          <li>
+            <h3 class="step-title">Discordga qo'shiling</h3>
+            <p>UNDEAD MC Discord serveriga kiring va qoidalar bilan tanishib chiqing.</p>
+          </li>
+          <li>
+            <h3 class="step-title">Tiket oching</h3>
+            <p><strong>tier-test</strong> kanalida tiket oching: nikingizni va qaysi kitda test topshirmoqchi ekaningizni yozing.</p>
+          </li>
+          <li>
+            <h3 class="step-title">Testerni kuting</h3>
+            <p>Bo'sh tester siz bilan bog'lanadi va serverda jang o'tkazadi. Test tugagach, tieringiz shu saytda paydo bo'ladi.</p>
+          </li>
+        </ol>
+
+        <div class="howto-cta">
+          <a class="btn btn-primary btn-lg" href="{{discord}}" target="_blank" rel="noopener">
+            <span class="icon" data-icon="discord"></span><span>Discordga qo'shilish</span>
+          </a>
+        </div>
+
+        <div class="legend surface" aria-labelledby="legend-title">
+          <h3 class="legend-title" id="legend-title">Tierlar va ballar</h3>
+          <ul class="legend-grid" data-legend></ul>
+          <p class="legend-note"><strong>HT</strong> — tier ichida yuqori daraja, <strong>LT</strong> — past daraja. Tier 1 — eng kuchli, Tier 5 — boshlang'ich. Umumiy ball barcha kitlardagi ballar yig'indisi.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="/assets/logo-sm.webp" width="440" height="106" alt="UNDEAD MC" loading="lazy" decoding="async">
+        <p>© 2026 UNDEAD MC</p>
+        <p class="footer-muted">Mojang yoki Microsoft bilan bog'liq emas.</p>
+      </div>
+      <nav class="footer-links" aria-label="Havolalar">
+        <ul>
+          <li><a href="{{shop}}" rel="noopener"><span class="icon" data-icon="chest"></span>Do'kon</a></li>
+          <li><a href="{{discord}}" target="_blank" rel="noopener"><span class="icon" data-icon="discord"></span>Discord</a></li>
+          <li><a href="{{telegram}}" target="_blank" rel="noopener"><span class="icon" data-icon="telegram"></span>Telegram kanal</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+  <dialog class="profile" id="profile" aria-labelledby="profile-title" data-profile>
+    <div class="profile-inner">
+      <button class="icon-btn profile-close" type="button" aria-label="Yopish" data-profile-close>
+        <span class="icon" data-icon="close"></span>
+      </button>
+      <div class="profile-body" data-profile-body aria-live="polite"></div>
+    </div>
+  </dialog>
+</body>
+</html>

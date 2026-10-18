@@ -1,0 +1,31 @@
+# Faqat o'z VPS ingiz uchun (mcweb.uz da kerak emas — platforma ilovani o'zi ishga tushiradi).
+# pm2 o'rniga systemd ishlatmoqchi bo'lsangiz (ixtiyoriy):
+#   sudo cp deploy/undeadmc-tiers.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now undeadmc-tiers
+#   sudo journalctl -u undeadmc-tiers -f      # loglar
+
+[Unit]
+Description=UNDEAD MC tier sayti (tier.undeadmc.uz)
+After=network.target
+
+[Service]
+Type=simple
+User=undeadmc
+Group=undeadmc
+WorkingDirectory=/var/www/undeadmc-tiers
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=3
+
+# Xavfsizlik: faqat data/ papkasiga (baza va data/backups) yozish mumkin.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/undeadmc-tiers/data
+
+[Install]
+WantedBy=multi-user.target
