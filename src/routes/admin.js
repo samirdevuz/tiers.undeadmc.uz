@@ -4,6 +4,7 @@ const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const data = require('../data');
 const backup = require('../backup');
+const skin = require('../skin');
 const { config, POINTS, TIERS, KIT_ICONS } = require('../config');
 const { HttpError, str, toId, toPage } = require('../util');
 const {
@@ -13,6 +14,8 @@ const {
 
 const router = express.Router();
 
+// Skin fayli xom PNG sifatida keladi (PUT /players/:id/skin), qolgan hammasi JSON.
+router.use(express.raw({ type: 'image/png', limit: skin.MAX_BYTES }));
 router.use(express.json({ limit: '20kb' }));
 router.use((req, res, next) => {
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) req.body = {};
@@ -75,6 +78,21 @@ router.patch('/players/:id', requireStaff, (req, res) => {
 
 router.put('/players/:id/tiers', requireStaff, (req, res) => {
   res.json(data.setPlayerTiers(toId(req.params.id), req.body.changes, req.staff));
+});
+
+router.put('/players/:id/skin', requireStaff, (req, res) => {
+  const png = Buffer.isBuffer(req.body) ? req.body : null;
+  res.json(data.setPlayerSkin(toId(req.params.id), skin.validateSkin(png)));
+});
+
+router.post('/players/:id/skin/import', requireStaff, async (req, res) => {
+  const id = toId(req.params.id);
+  data.adminGetPlayer(id);
+  res.json(data.setPlayerSkin(id, await skin.fetchMojangSkin(req.body.nick)));
+});
+
+router.delete('/players/:id/skin', requireStaff, (req, res) => {
+  res.json(data.setPlayerSkin(toId(req.params.id), null));
 });
 
 router.delete('/players/:id', requireAdmin, (req, res) => {

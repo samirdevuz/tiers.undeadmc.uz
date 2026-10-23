@@ -185,9 +185,23 @@ Testerlar parolini admin **Xodimlar** bo'limida o'zgartiradi.
 4. Har bir o'zgarish tarixga yoziladi (kim, qachon, eski → yangi) va saytdagi profilda
    "Oxirgi test: sana, tester: ism" bo'lib chiqadi. Sayt 15 soniya ichida yangilanadi.
 
+### Skin qo'yish
+
+O'yinchini tanlang, **Skin** bo'limida:
+
+- **Fayl yuklash** — skin PNG faylini tanlang (64x64 yoki eski 64x32 format, 64 KB gacha).
+  Oldindan ko'rinishi chiqadi, keyin **Yuklash** ni bosing. Ingichka qo'lli (Alex) skinlar o'zi aniqlanadi.
+- **Litsenziya nikidan olish** — o'yinchining Mojang (litsenziya) akkaunti bo'lsa, nikini yozing va
+  **Skinni olish** ni bosing: skin Mojang serveridan bir marta yuklab olinib saytda saqlanadi.
+- **Skinni olib tashlash** — saytdagi skin o'chadi.
+
+Skin bazada (`tiers.db`) saqlanadi, shuning uchun zaxira nusxalarga ham kiradi. Saytda skin to'liq
+3D personaj bo'lib chiqadi: umumiy reytingning tepasida top 3 podiumi, har bir qatorda va profilda.
+Skin qo'yilmagan o'yinchilar uchun avvalgidek mc-heads.net dan nik bo'yicha rasm olinadi.
+
 **Rollar:**
 
-- **Tester** — o'yinchi qo'shadi, nikini o'zgartiradi, tier qo'yadi.
+- **Tester** — o'yinchi qo'shadi, nikini o'zgartiradi, tier va skin qo'yadi.
 - **Admin** — yana: o'yinchilarni o'chiradi, kitlarni (qo'shish, nomlash, tartib, yoqish/o'chirish),
   xodimlarni (**Xodimlar**) va zaxira nusxalarni (**Zaxira**) boshqaradi.
 
@@ -274,6 +288,7 @@ Javoblar JSON, serverda 15 soniya keshlanadi. Cheklov: bitta IP dan daqiqasiga 1
 | `GET /api/kit/sword` | Kit bo'yicha o'yinchilar, Tier 1–5, HT/LT guruhlarida |
 | `GET /api/player/NIK` | O'yinchi profili: o'rin, ball, kitlar, oxirgi test |
 | `GET /api/search?q=nik` | Nik bo'yicha qidiruv (8 tagacha) |
+| `GET /skins/HASH.png` | O'yinchi skini (PNG). Har bir o'yinchida `skin` maydoni: hash yoki `null` |
 | `GET /healthz` | `{"ok":true}` — platforma sog'liq tekshiruvi uchun |
 
 ---

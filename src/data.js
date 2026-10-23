@@ -8,6 +8,7 @@ const {
   HttpError, NICK_RE, SLUG_RE, USERNAME_RE, KIT_NAME_RE,
   str, nowIso, likeEscape, isUniqueError
 } = require('./util');
+const { skinHash } = require('./skin');
 
 const BCRYPT_COST = 12;
 const RESERVED_SLUGS = new Set(['umumiy', 'reyting', 'tier-test', 'admin', 'api', 'player']);
@@ -19,7 +20,7 @@ const q = {
   // --- ommaviy ---
   activeKits: db.prepare('SELECT id, slug, name, icon FROM kits WHERE active = 1 ORDER BY sort_order, id'),
   ranking: db.prepare(`
-    SELECT p.id, p.nick, SUM(${POINTS_SQL}) AS total, COUNT(*) AS tested
+    SELECT p.id, p.nick, p.skin_hash AS skin, SUM(${POINTS_SQL}) AS total, COUNT(*) AS tested
     FROM players p
     JOIN tiers t ON t.player_id = p.id
     JOIN kits k ON k.id = t.kit_id AND k.active = 1
@@ -29,11 +30,11 @@ const q = {
     SELECT t.player_id AS playerId, k.slug, t.tier
     FROM tiers t JOIN kits k ON k.id = t.kit_id AND k.active = 1`),
   kitBoard: db.prepare(`
-    SELECT p.nick, t.tier
+    SELECT p.nick, p.skin_hash AS skin, t.tier
     FROM tiers t JOIN players p ON p.id = t.player_id
     WHERE t.kit_id = ?
     ORDER BY p.nick COLLATE NOCASE`),
-  playerByNick: db.prepare('SELECT id, nick FROM players WHERE nick = ?'),
+  playerByNick: db.prepare('SELECT id, nick, skin_hash AS skin FROM players WHERE nick = ?'),
   playerTiers: db.prepare(`
     SELECT k.slug, t.tier, t.updated_at AS testedAt,
       (SELECT h.staff_name FROM tier_history h
@@ -42,14 +43,14 @@ const q = {
     FROM tiers t JOIN kits k ON k.id = t.kit_id
     WHERE t.player_id = ? AND k.active = 1`),
   search: db.prepare(`
-    SELECT id, nick FROM players
+    SELECT id, nick, skin_hash AS skin FROM players
     WHERE nick LIKE @contains ESCAPE '\\'
     ORDER BY (nick LIKE @prefix ESCAPE '\\') DESC, length(nick), nick COLLATE NOCASE
     LIMIT 8`),
 
   // --- o'yinchilar (admin) ---
   adminPlayers: db.prepare(`
-    SELECT p.id, p.nick, p.created_at AS createdAt,
+    SELECT p.id, p.nick, p.skin_hash AS skin, p.created_at AS createdAt,
       (SELECT COUNT(*) FROM tiers t WHERE t.player_id = p.id) AS tested
     FROM players p
     WHERE @like IS NULL OR p.nick LIKE @like ESCAPE '\\'
@@ -58,7 +59,7 @@ const q = {
   adminPlayersCount: db.prepare(`
     SELECT COUNT(*) AS n FROM players p
     WHERE @like IS NULL OR p.nick LIKE @like ESCAPE '\\'`),
-  playerById: db.prepare('SELECT id, nick, created_at AS createdAt FROM players WHERE id = ?'),
+  playerById: db.prepare('SELECT id, nick, skin_hash AS skin, created_at AS createdAt FROM players WHERE id = ?'),
   playerTiersAll: db.prepare('SELECT kit_id AS kitId, tier, updated_at AS updatedAt FROM tiers WHERE player_id = ?'),
   playerHistory: db.prepare(`
     SELECT h.id, k.name AS kit, h.old_tier AS oldTier, h.new_tier AS newTier,
@@ -69,6 +70,8 @@ const q = {
   insertPlayer: db.prepare('INSERT INTO players (nick, created_at) VALUES (?, ?)'),
   renamePlayer: db.prepare('UPDATE players SET nick = ? WHERE id = ?'),
   deletePlayer: db.prepare('DELETE FROM players WHERE id = ?'),
+  setSkin: db.prepare('UPDATE players SET skin_hash = ?, skin_png = ? WHERE id = ?'),
+  skinPng: db.prepare('SELECT skin_png AS png FROM players WHERE skin_hash = ? AND skin_png IS NOT NULL LIMIT 1'),
   tierFor: db.prepare('SELECT tier FROM tiers WHERE player_id = ? AND kit_id = ?'),
   upsertTier: db.prepare(`
     INSERT INTO tiers (player_id, kit_id, tier, updated_at, updated_by)
@@ -139,6 +142,7 @@ function ranking() {
       rank: i + 1,
       id: row.id,
       nick: row.nick,
+      skin: row.skin,
       total: row.total,
       tested: row.tested,
       tiers: tiersByPlayer.get(row.id) || {}
@@ -160,7 +164,7 @@ function leaderboard(page) {
   const size = config.pageSize;
   const players = list
     .slice((page - 1) * size, page * size)
-    .map(({ rank, nick, total, tested, tiers }) => ({ rank, nick, total, tested, tiers }));
+    .map(({ rank, nick, skin, total, tested, tiers }) => ({ rank, nick, skin, total, tested, tiers }));
   return {
     page,
     pageSize: size,
@@ -175,9 +179,9 @@ function kitBoard(slug) {
   if (!kit) return null;
   const tiers = [1, 2, 3, 4, 5].map((n) => ({ tier: n, ht: [], lt: [] }));
   const rows = q.kitBoard.all(kit.id);
-  for (const { nick, tier } of rows) {
+  for (const { nick, skin, tier } of rows) {
     const column = tiers[Number(tier.slice(2)) - 1];
-    (tier.startsWith('HT') ? column.ht : column.lt).push(nick);
+    (tier.startsWith('HT') ? column.ht : column.lt).push({ nick, skin });
   }
   return { kit: { slug: kit.slug, name: kit.name, icon: kit.icon }, total: rows.length, tiers };
 }
@@ -189,6 +193,7 @@ function playerProfile(nick) {
   const byKit = new Map(q.playerTiers.all(player.id).map((row) => [row.slug, row]));
   return {
     nick: player.nick,
+    skin: player.skin,
     rank: ranked ? ranked.rank : null,
     total: ranked ? ranked.total : 0,
     tested: ranked ? ranked.tested : 0,
@@ -212,7 +217,7 @@ function searchPlayers(term) {
   const { byId } = ranking();
   return q.search.all({ contains: `%${esc}%`, prefix: `${esc}%` }).map((p) => {
     const ranked = byId.get(p.id);
-    return { nick: p.nick, rank: ranked ? ranked.rank : null, total: ranked ? ranked.total : 0 };
+    return { nick: p.nick, skin: p.skin, rank: ranked ? ranked.rank : null, total: ranked ? ranked.total : 0 };
   });
 }
 
@@ -286,6 +291,19 @@ function deletePlayer(id) {
   const info = q.deletePlayer.run(id);
   if (info.changes === 0) throw new HttpError(404, "Bunday o'yinchi topilmadi.");
   invalidate();
+}
+
+// png — tekshirilgan skin (src/skin.js), null — skinni olib tashlash.
+function setPlayerSkin(id, png) {
+  const info = q.setSkin.run(png ? skinHash(png) : null, png || null, id);
+  if (info.changes === 0) throw new HttpError(404, "Bunday o'yinchi topilmadi.");
+  invalidate();
+  return adminGetPlayer(id);
+}
+
+function skinPng(hash) {
+  const row = q.skinPng.get(hash);
+  return row ? row.png : null;
 }
 
 const applyTierChanges = db.transaction((playerId, changes, staff) => {
@@ -474,9 +492,9 @@ async function changeOwnPassword(actor, current, next) {
 module.exports = {
   BCRYPT_COST,
   // ommaviy
-  publicKits, leaderboard, kitBoard, playerProfile, searchPlayers,
+  publicKits, leaderboard, kitBoard, playerProfile, searchPlayers, skinPng,
   // admin
-  adminListPlayers, adminGetPlayer, addPlayer, renamePlayer, deletePlayer, setPlayerTiers, recentHistory,
+  adminListPlayers, adminGetPlayer, addPlayer, renamePlayer, deletePlayer, setPlayerTiers, setPlayerSkin, recentHistory,
   listKits, createKit, updateKit, reorderKits,
   listStaff, createStaff, updateStaff, deleteStaff, changeOwnPassword
 };

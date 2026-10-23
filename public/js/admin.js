@@ -41,18 +41,8 @@
     return isNaN(d.getTime()) ? "—" : fmtDate(iso) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
   }
 
-  function headImg(nick, size) {
-    var img = el("img", {
-      class: "pixel-img",
-      src: "https://mc-heads.net/avatar/" + encodeURIComponent(nick) + "/" + (size || 64),
-      width: 64, height: 64, alt: "", loading: "lazy", decoding: "async", referrerpolicy: "no-referrer"
-    });
-    img.addEventListener("error", function onErr() {
-      img.removeEventListener("error", onErr);
-      img.src = "/assets/steve.svg";
-    });
-    return img;
-  }
+  // player: { nick, skin } — public/js/skin.js
+  function headImg(player) { return U.skin.head(player); }
 
   function iconSpan(cls, name) {
     return el("span", { class: cls }, [U.icon(name)]);
@@ -72,9 +62,11 @@
   function api(method, path, body) {
     var opts = { method: method, credentials: "same-origin", headers: { Accept: "application/json" } };
     if (method !== "GET") {
-      opts.headers["Content-Type"] = "application/json";
+      // Skin fayli (Blob) xom PNG bo'lib yuboriladi, qolgani JSON.
+      var raw = typeof Blob !== "undefined" && body instanceof Blob;
+      opts.headers["Content-Type"] = raw ? "image/png" : "application/json";
       opts.headers["X-CSRF-Token"] = csrf;
-      opts.body = JSON.stringify(body || {});
+      opts.body = raw ? body : JSON.stringify(body || {});
     }
     return fetch("/admin/api" + path, opts).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (data) {
@@ -257,7 +249,7 @@
         class: "player-item", type: "button", "data-id": p.id,
         "aria-current": String(p.id === pl.selectedId)
       }, [
-        headImg(p.nick),
+        headImg(p),
         el("span", { class: "pi-nick", text: p.nick }),
         el("span", { class: "pi-meta", text: p.total + " ball · " + p.tested + " kit" })
       ]);
@@ -336,7 +328,7 @@
     editor.appendChild(back);
 
     editor.appendChild(el("div", { class: "editor-head" }, [
-      headImg(p.nick),
+      headImg(p),
       el("div", null, [
         el("h2", { class: "editor-title", id: "editor-title", text: p.nick }),
         el("p", { class: "editor-sub" }, [
@@ -393,6 +385,8 @@
     });
     editor.appendChild(tierForm);
 
+    editor.appendChild(skinSection(p));
+
     // Nikni o'zgartirish
     var renameForm = el("form", { class: "form-inline", novalidate: true }, [
       csrfInput(),
@@ -446,6 +440,104 @@
     }
 
     if (focus) editor.focus();
+  }
+
+  /* ---------- skin ---------- */
+
+  var SKIN_MAX_BYTES = 64 * 1024;
+  var SKIN_SIZE_ERROR = "Skin o'lchami 64x64 yoki 64x32 bo'lishi kerak";
+
+  function afterSkinChange(np, msg) {
+    toast(msg);
+    renderEditor(np, false);
+    loadPlayers();
+  }
+
+  function skinSection(p) {
+    var preview = el("div", { class: "skin-preview" }, [U.skin.body(p, "skin-preview-body", 6, p.nick + " skini")]);
+    var status = el("p", {
+      class: "muted small",
+      text: p.skin
+        ? "Saytga yuklangan skin ishlatilmoqda."
+        : "Skin o'rnatilmagan — mc-heads.net dan nik bo'yicha olinadi (litsenziya bo'lmasa Steve)."
+    });
+
+    // 1) PNG fayl yuklash
+    var fileInput = el("input", { name: "file", type: "file", accept: "image/png", required: true });
+    var uploadBtn = el("button", { class: "btn btn-primary", type: "submit", text: "Yuklash", disabled: true });
+    var fileForm = el("form", { class: "form-inline", novalidate: true }, [
+      el("label", { class: "field field-grow" }, [el("span", { text: "Skin fayli (PNG, 64x64 yoki 64x32)" }), fileInput]),
+      uploadBtn,
+      el("p", { class: "form-error", role: "alert", "data-error": true, hidden: true })
+    ]);
+    var picked = null;
+    fileInput.addEventListener("change", function () {
+      picked = null;
+      uploadBtn.disabled = true;
+      formError(fileForm, "");
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      if (file.type && file.type !== "image/png") return formError(fileForm, "Faqat PNG fayl yuklash mumkin.");
+      if (file.size > SKIN_MAX_BYTES) return formError(fileForm, "Fayl juda katta (64 KB dan oshmasin).");
+      createImageBitmap(file).then(function (bmp) {
+        if (bmp.width !== 64 || (bmp.height !== 64 && bmp.height !== 32)) {
+          formError(fileForm, SKIN_SIZE_ERROR + " (tanlangan: " + bmp.width + "x" + bmp.height + ").");
+          return;
+        }
+        preview.textContent = "";
+        preview.appendChild(U.skin.preview(bmp, "skin-preview-body", 6));
+        preview.appendChild(el("span", { class: "skin-preview-note", text: "Saqlanmagan" }));
+        picked = file;
+        uploadBtn.disabled = false;
+      }, function () {
+        formError(fileForm, "Rasmni o'qib bo'lmadi. PNG skin faylini tanlang.");
+      });
+    });
+    onSubmit(fileForm, function () {
+      if (!picked) throw new Error("Avval skin faylini tanlang.");
+      return api("PUT", "/players/" + p.id + "/skin", picked).then(function (np) {
+        afterSkinChange(np, "Skin saqlandi");
+      });
+    });
+
+    // 2) Litsenziya (Mojang) akkauntidan olish
+    var importForm = el("form", { class: "form-inline", novalidate: true }, [
+      csrfInput(),
+      el("label", { class: "field field-grow" }, [
+        el("span", { text: "Yoki litsenziya (Mojang) nikidan olish" }),
+        el("input", { name: "nick", type: "text", value: p.nick, maxlength: 16, autocomplete: "off", autocapitalize: "off", spellcheck: "false", required: true })
+      ]),
+      el("button", { class: "btn btn-ghost", type: "submit", text: "Skinni olish" }),
+      el("p", { class: "form-error", role: "alert", "data-error": true, hidden: true })
+    ]);
+    onSubmit(importForm, function (f) {
+      var nick = val(f, "nick").trim();
+      if (!/^[A-Za-z0-9_]{3,16}$/.test(nick)) throw new Error("Nik 3–16 belgidan iborat bo'lsin: lotin harflari, raqamlar yoki _.");
+      return api("POST", "/players/" + p.id + "/skin/import", { nick: nick }).then(function (np) {
+        afterSkinChange(np, nick + " skini o'rnatildi");
+      });
+    });
+
+    var controls = [status, fileForm, importForm];
+    if (p.skin) {
+      var remove = el("button", { class: "btn btn-ghost btn-sm", type: "button", text: "Skinni olib tashlash" });
+      remove.addEventListener("click", function () {
+        if (!window.confirm(p.nick + " skini olib tashlansinmi?")) return;
+        remove.disabled = true;
+        api("DELETE", "/players/" + p.id + "/skin").then(function (np) {
+          afterSkinChange(np, "Skin olib tashlandi");
+        }, function (err) {
+          remove.disabled = false;
+          toast(err.message, true);
+        });
+      });
+      controls.push(el("div", { class: "editor-actions" }, [remove]));
+    }
+
+    return el("section", { class: "skin-editor", "aria-labelledby": "skin-title" }, [
+      el("h3", { class: "admin-h2", id: "skin-title", text: "Skin" }),
+      el("div", { class: "skin-box" }, [preview, el("div", { class: "skin-controls" }, controls)])
+    ]);
   }
 
   /* ---------- tarix ---------- */

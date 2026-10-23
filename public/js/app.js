@@ -9,7 +9,6 @@
   var PLAYER_PATH = /^\/player\/([A-Za-z0-9_]{1,16})\/?$/;
   var NICK_RE = /^[A-Za-z0-9_]{3,16}$/;
   var SEARCH_RE = /^[A-Za-z0-9_]{1,16}$/;
-  var STEVE = "/assets/steve.svg";
   var mqColumns = window.matchMedia("(min-width: 900px)");
   var mqNav = window.matchMedia("(min-width: 960px)");
   var DISCORD = document.body.getAttribute("data-discord") || "#";
@@ -61,22 +60,9 @@
 
   function playerUrl(nick) { return "/player/" + encodeURIComponent(nick); }
 
-  function onImgError(e) {
-    var img = e.currentTarget;
-    img.removeEventListener("error", onImgError);
-    img.src = STEVE;
-  }
-
-  function headImg(nick, cls) {
-    var img = el("img", {
-      class: "pixel-img" + (cls ? " " + cls : ""),
-      src: "https://mc-heads.net/avatar/" + encodeURIComponent(nick) + "/64",
-      width: 64, height: 64, alt: "",
-      loading: "lazy", decoding: "async", referrerpolicy: "no-referrer"
-    });
-    img.addEventListener("error", onImgError);
-    return img;
-  }
+  // player: { nick, skin } — skin o'rnatilgan bo'lsa o'sha chiziladi (public/js/skin.js).
+  function headImg(player, cls) { return U.skin.head(player, cls); }
+  function bodyImg(player, cls, scale, alt) { return U.skin.body(player, cls, scale, alt); }
 
   function tierBadge(tier, kit, large) {
     var cls = "tb" + (large ? " tb-lg" : "");
@@ -247,7 +233,7 @@
       }
       players.forEach(function (p, i) {
         var li = el("li", { class: "search-option", role: "option", id: "so-" + i, "aria-selected": "false" }, [
-          headImg(p.nick),
+          headImg(p),
           el("span", { class: "so-nick", text: p.nick }),
           el("span", { class: "so-meta", text: p.rank ? "#" + p.rank + " · " + p.total + " ball" : "tekshirilmagan" })
         ]);
@@ -490,6 +476,7 @@
           return;
         }
         panel.appendChild(boardHead("trophy", "Umumiy reyting", data.total + " o'yinchi"));
+        if (data.page === 1) panel.appendChild(podium(data.players.slice(0, 3)));
         lb.list = el("ol", { class: "lb" });
         panel.appendChild(lb.list);
         lb.moreBtn = el("button", { class: "btn btn-ghost", type: "button" });
@@ -524,7 +511,7 @@
     }));
     var link = el("a", { class: "lb-link", href: playerUrl(p.nick), "data-nick": p.nick }, [
       el("span", { class: "lb-rank" }, [el("span", { class: "sr-only", text: "O'rin: " }), String(p.rank)]),
-      headImg(p.nick, "lb-head"),
+      el("span", { class: "lb-skin" }, [bodyImg(p, "lb-body", 4)]),
       el("span", { class: "lb-name" }, [
         el("span", { class: "lb-nick", text: p.nick }),
         el("span", { class: "lb-sub", text: p.tested + " ta kit" })
@@ -533,6 +520,25 @@
       badges
     ]);
     return el("li", { class: "lb-row" + (p.rank <= 3 ? " top-" + p.rank : "") }, [link]);
+  }
+
+  // Top 3 — to'liq skin bilan katta personajlar (ekranda 2 · 1 · 3 tartibida).
+  function podium(top) {
+    var MEDALS = ["Oltin", "Kumush", "Bronza"];
+    var list = el("ol", { class: "podium", "aria-label": "Top 3 o'yinchi" });
+    top.forEach(function (p) {
+      list.appendChild(el("li", { class: "podium-item top-" + p.rank }, [
+        el("a", { class: "podium-link", href: playerUrl(p.nick), "data-nick": p.nick }, [
+          el("span", { class: "podium-figure" }, [bodyImg(p, "podium-body", 8, p.nick + " skini")]),
+          el("span", { class: "podium-rank", title: MEDALS[p.rank - 1] }, [
+            el("span", { class: "sr-only", text: "O'rin: " }), String(p.rank)
+          ]),
+          el("span", { class: "podium-nick", text: p.nick }),
+          el("span", { class: "podium-points" }, [el("strong", { text: String(p.total) }), " ball"])
+        ])
+      ]));
+    });
+    return list;
   }
 
   /* Kit bo'yicha: 5 ta ustun (Tier 1 … Tier 5), mobilda yig'iladigan bo'limlar. */
@@ -573,8 +579,8 @@
       var body;
       if (count) {
         body = el("ul", { class: "kb-list", id: bodyId });
-        col.ht.forEach(function (nick) { body.appendChild(kitEntry(nick, "HT" + col.tier)); });
-        col.lt.forEach(function (nick) { body.appendChild(kitEntry(nick, "LT" + col.tier)); });
+        col.ht.forEach(function (p) { body.appendChild(kitEntry(p, "HT" + col.tier)); });
+        col.lt.forEach(function (p) { body.appendChild(kitEntry(p, "LT" + col.tier)); });
       } else {
         body = el("p", { class: "kb-empty", id: bodyId, text: "Hali hech kim yo'q" });
       }
@@ -588,12 +594,12 @@
     panel.appendChild(grid);
   }
 
-  function kitEntry(nick, tier) {
+  function kitEntry(p, tier) {
     var ht = tier.charAt(0) === "H";
     return el("li", null, [
-      el("a", { class: "kb-entry " + (ht ? "ht" : "lt"), href: playerUrl(nick), "data-nick": nick }, [
-        headImg(nick),
-        el("span", { class: "kb-nick", text: nick }),
+      el("a", { class: "kb-entry " + (ht ? "ht" : "lt"), href: playerUrl(p.nick), "data-nick": p.nick }, [
+        headImg(p),
+        el("span", { class: "kb-nick", text: p.nick }),
         el("span", { class: "kb-tag", text: tier })
       ])
     ]);
@@ -688,13 +694,7 @@
 
   function renderProfile(p) {
     dialogBody.textContent = "";
-    var body = el("img", {
-      class: "pf-body",
-      src: "https://mc-heads.net/body/" + encodeURIComponent(p.nick) + "/240",
-      width: 120, height: 240, alt: p.nick + " skini",
-      decoding: "async", referrerpolicy: "no-referrer"
-    });
-    body.addEventListener("error", onImgError);
+    var body = bodyImg(p, "pf-body", 8, p.nick + " skini");
 
     dialogBody.appendChild(el("div", { class: "pf-hero" }, [
       body,

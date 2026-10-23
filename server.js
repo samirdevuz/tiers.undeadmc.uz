@@ -67,6 +67,14 @@ app.use(express.static(config.publicDir, {
   }
 }));
 
+// O'yinchi skinlari: manzil fayl hashidan iborat, shuning uchun uzoq keshlanadi.
+app.get('/skins/:file', (req, res) => {
+  const m = /^([0-9a-f]{32})\.png$/.exec(String(req.params.file));
+  const png = m ? data.skinPng(m[1]) : null;
+  if (!png) return res.status(404).set('Cache-Control', 'no-cache').type('text/plain').send('Topilmadi');
+  res.set('Cache-Control', 'public, max-age=31536000, immutable').type('image/png').send(png);
+});
+
 app.use('/api', publicApi);
 app.use('/admin/api', adminApi);
 

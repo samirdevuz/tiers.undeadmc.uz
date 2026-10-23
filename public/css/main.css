@@ -109,6 +109,7 @@ ul, ol { padding: 0; list-style: none; }
 .icon svg { width: 100%; height: 100%; }
 
 .pixel-img { image-rendering: pixelated; }
+.skin-canvas { display: block; }
 
 /* ---------- Fon: siljib yuruvchi qora bloklar ---------- */
 
@@ -392,7 +393,7 @@ ul, ol { padding: 0; list-style: none; }
   cursor: pointer;
   color: var(--silver);
 }
-.search-option img { width: 32px; height: 32px; flex: none; }
+.search-option img, .search-option canvas { width: 32px; height: 32px; flex: none; }
 .so-nick { flex: 1; min-width: 0; font-weight: 700; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .so-meta { flex: none; font-size: 0.8rem; color: var(--muted); }
 .search-option[aria-selected="true"],
@@ -647,7 +648,21 @@ ul, ol { padding: 0; list-style: none; }
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.lb-head { grid-area: head; width: 40px; height: 40px; background: #1f1f1f; }
+.lb-skin {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 64px;
+}
+.lb-body {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+}
 .lb-name { grid-area: name; min-width: 0; }
 .lb-nick {
   display: block;
@@ -696,16 +711,14 @@ ul, ol { padding: 0; list-style: none; }
 .lb-row.top-2 .lb-rank { background: var(--medal-silver); }
 .lb-row.top-3 .lb-rank { background: var(--bronze); }
 .lb-row.top-1 .lb-points strong { color: var(--gold); text-shadow: 0 0 14px rgba(245, 197, 66, 0.35); }
-.lb-row.top-1 .lb-head { box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(245, 197, 66, 0.35); }
-.lb-row.top-2 .lb-head { box-shadow: 0 0 0 2px var(--medal-silver); }
-.lb-row.top-3 .lb-head { box-shadow: 0 0 0 2px var(--bronze); }
+.lb-row.top-1 .lb-body { filter: drop-shadow(0 0 8px rgba(245, 197, 66, 0.45)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6)); }
 
 .lb-more { display: flex; justify-content: center; margin-top: 18px; }
 .lb-sentinel { height: 1px; }
 
 @media (min-width: 420px) {
   .lb-link { grid-template-columns: 40px 44px minmax(0, 1fr) auto; }
-  .lb-head { width: 44px; height: 44px; }
+  .lb-skin { width: 44px; height: 72px; }
 }
 
 @media (min-width: 900px) {
@@ -725,6 +738,89 @@ ul, ol { padding: 0; list-style: none; }
   .lb-row.top-1 .lb-link,
   .lb-row.top-2 .lb-link,
   .lb-row.top-3 .lb-link { padding-top: 14px; padding-bottom: 14px; }
+}
+
+/* Top 3 podium: to'liq skinli personajlar */
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.podium-item { --medal: var(--gold); min-width: 0; }
+.podium-item.top-1 { --medal: var(--gold); order: 2; }
+.podium-item.top-2 { --medal: var(--medal-silver); order: 1; }
+.podium-item.top-3 { --medal: var(--bronze); order: 3; }
+
+.podium-link {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 6px 12px;
+  color: var(--silver);
+  text-align: center;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 38%, color-mix(in srgb, var(--medal) 22%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--medal) 10%, transparent), transparent 55%),
+    var(--surface);
+  border: 1px solid color-mix(in srgb, var(--medal) 40%, transparent);
+  box-shadow: inset 0 4px 0 var(--medal), 0 4px 0 #050505;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
+}
+.podium-link:hover { color: var(--silver); border-color: var(--medal); transform: translateY(-2px); }
+
+.podium-figure {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 150px;
+}
+.podium-item.top-1 .podium-figure { height: 190px; }
+.podium-body {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 16px color-mix(in srgb, var(--medal) 30%, transparent));
+}
+
+.podium-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  margin-top: -4px;
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  color: #0a0a0a;
+  background: var(--medal);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.35), inset -2px -2px 0 rgba(0, 0, 0, 0.25), 0 3px 0 #050505;
+}
+.podium-nick {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--white);
+}
+.podium-points { font-size: 0.78rem; color: var(--muted); }
+.podium-points strong { font-size: 1rem; font-weight: 800; color: var(--medal); font-variant-numeric: tabular-nums; }
+
+@media (min-width: 640px) {
+  .podium { gap: 14px; margin-bottom: 22px; }
+  .podium-link { padding: 18px 10px 16px; }
+  .podium-figure { height: 210px; }
+  .podium-item.top-1 .podium-figure { height: 260px; }
+  .podium-nick { font-size: 1.05rem; }
+  .podium-points strong { font-size: 1.2rem; }
 }
 
 /* ---------- Kit bo'yicha tierlar ---------- */
@@ -790,7 +886,7 @@ ul, ol { padding: 0; list-style: none; }
 }
 .kb-entry.ht { border-left-color: var(--ht); }
 .kb-entry:hover { color: var(--white); background: #242424; }
-.kb-entry img { width: 28px; height: 28px; flex: none; }
+.kb-entry img, .kb-entry canvas { width: 28px; height: 28px; flex: none; }
 .kb-nick { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kb-tag {
   flex: none;
@@ -807,7 +903,7 @@ ul, ol { padding: 0; list-style: none; }
   .kb-chevron { display: none; }
   .kb-list { padding: 4px 8px 10px; }
   .kb-entry { font-size: 0.86rem; padding-right: 8px; }
-  .kb-entry img { width: 24px; height: 24px; }
+  .kb-entry img, .kb-entry canvas { width: 24px; height: 24px; }
   .kb-empty { padding: 4px 12px 14px; }
 }
 

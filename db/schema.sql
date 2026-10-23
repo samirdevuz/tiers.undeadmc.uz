@@ -14,7 +14,11 @@ CREATE TABLE IF NOT EXISTS staff (
 CREATE TABLE IF NOT EXISTS players (
   id         INTEGER PRIMARY KEY,
   nick       TEXT    NOT NULL COLLATE NOCASE,
-  created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  -- Skin: PNG fayl (64x64 yoki 64x32) va uning sha256 qisqa hashi (/skins/<hash>.png).
+  -- Eski bazalarga bu ustunlarni src/db.js qo'shadi.
+  skin_hash  TEXT,
+  skin_png   BLOB
 );
 -- Nik katta-kichik harfdan qat'i nazar yagona.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_players_nick ON players (nick COLLATE NOCASE);
